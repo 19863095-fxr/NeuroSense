@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0a1930" />
+    <title>NeuroSense · Plataforma Clínica de Análisis EEG</title>
+
+    <link rel="icon" href="logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- LOGIN -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-visual">
+            <div class="brand">
+                <img src="logo.png" alt="NeuroSense" />
+                <span class="brand-text">NeuroSense</span>
+                <span class="brand-badge">CLINICAL</span>
+            </div>
+            <div>
+                <div class="headline">
+                    <span class="eyebrow">Análisis EEG asistido por IA</span>
+                    <h1>Interpretación clínica de electroencefalogramas en segundos.</h1>
+                    <p>Sube el registro de tu EEG y obtén un reporte técnico interpretado, con recomendaciones basadas en criterios neurológicos estándar — pensado para acompañar, no reemplazar, el criterio del especialista.</p>
+                </div>
+                <div class="stats">
+                    <div class="stat"><b>5</b><span>bandas de frecuencia analizadas</span></div>
+                    <div class="stat"><b>3</b><span>niveles de severidad clínica</span></div>
+                    <div class="stat"><b>&lt;1min</b><span>tiempo de interpretación</span></div>
+                </div>
+                <div class="waveform-wrap">
+                    <div class="eeg-line">
+                        <svg viewBox="0 0 800 44" preserveAspectRatio="none">
+                            <g class="eeg-scroll">
+                                <path d="M0,22 L40,22 L52,6 L64,38 L76,22 L120,22 L132,10 L144,34 L156,22 L400,22 L412,6 L424,38 L436,22 L480,22 L492,10 L504,34 L516,22 L800,22" />
+                                <path transform="translate(800,0)" d="M0,22 L40,22 L52,6 L64,38 L76,22 L120,22 L132,10 L144,34 L156,22 L400,22 L412,6 L424,38 L436,22 L480,22 L492,10 L504,34 L516,22 L800,22" />
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-form-side">
+            <div class="login-box">
+                <div class="mobile-brand">
+                    <img src="logo.png" alt="NeuroSense" />
+                    <span>NeuroSense</span>
+                </div>
+                <h2 id="authTitle">Acceso al sistema</h2>
+                <p class="sub" id="authSub">Ingresa con tu cuenta para acceder a la plataforma clínica.</p>
+
+                <form id="loginForm">
+                    <div class="field">
+                        <label for="loginEmail">Correo electrónico</label>
+                        <input type="email" id="loginEmail" placeholder="tucorreo@dominio.com" required />
+                    </div>
+                    <div class="field">
+                        <label for="loginPassword">Contraseña</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required />
+                    </div>
+                    <button type="submit" class="btn-primary" id="loginBtn">Iniciar sesión</button>
+                </form>
+
+                <form id="registerForm" style="display: none;">
+                    <div class="field">
+                        <label for="registerEmail">Correo electrónico</label>
+                        <input type="email" id="registerEmail" placeholder="tucorreo@dominio.com" required />
+                    </div>
+                    <div class="field">
+                        <label for="registerPassword">Contraseña</label>
+                        <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" required />
+                    </div>
+                    <button type="submit" class="btn-primary" id="registerBtn">Crear cuenta</button>
+                </form>
+
+                <div class="divider-text">o</div>
+                <button type="button" class="btn-ghost" id="guestBtn">Continuar como invitado</button>
+
+                <p class="switch-line" id="switchLine">
+                    ¿No tienes cuenta? <a href="#" id="showRegister">Regístrate</a>
+                </p>
+                <div class="trust-note">🔒 Tus datos y archivos EEG se almacenan de forma privada.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboardScreen" style="display: none;">
+        <header>
+            <div class="container header-flex">
+                <div class="logo">
+                    <img src="logo.png" alt="NeuroSense" />
+                    <span class="logo-text">NeuroSense</span>
+                    <span class="logo-badge">CLINICAL</span>
+                </div>
+                <div class="header-right">
+                    <span class="user-chip"><span class="dot"></span><span id="userStatus"></span></span>
+                    <button id="logoutBtn" class="btn-outline">Cerrar sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="menu-nav">
+            <div class="container">
+                <button class="menu-btn active" data-page="inicio">Inicio</button>
+                <button class="menu-btn" data-page="analisis">Analizar</button>
+                <button class="menu-btn" data-page="historial">Historial</button>
+                <button class="menu-btn" data-page="aprender">Aprender</button>
+            </div>
+        </nav>
+
+        <main>
+            <!-- Inicio -->
+            <div class="container page" id="page-inicio">
+                <div class="home-hero">
+                    <span class="eyebrow">Panel principal</span>
+                    <h1>¿Qué necesitas hacer hoy?</h1>
+                    <p>Elige una opción para comenzar. Puedes cambiar de sección en cualquier momento desde el menú superior.</p>
+                </div>
+                <div class="launcher-grid">
+                    <button class="launcher-card" data-goto="analisis">
+                        <div class="launcher-icon">📊</div>
+                        <h3>Analizar EEG</h3>
+                        <p>Sube el registro de tu electroencefalograma y recibe un reporte clínico interpretado al instante.</p>
+                        <div class="go">Comenzar análisis →</div>
+                    </button>
+                    <button class="launcher-card" data-goto="historial">
+                        <div class="launcher-icon">🗂️</div>
+                        <h3>Historial</h3>
+                        <p>Consulta tus análisis anteriores, su nivel de severidad y la fecha en que fueron generados.</p>
+                        <div class="go">Ver registros →</div>
+                    </button>
+                    <button class="launcher-card" data-goto="aprender">
+                        <div class="launcher-icon">🧠</div>
+                        <h3>Aprender</h3>
+                        <p>Comprende qué mide un EEG, qué significan sus ondas y cómo interpretar un resultado clínico.</p>
+                        <div class="go">Explorar guía →</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Análisis -->
+            <div class="container page" id="page-analisis" style="display:none;">
+                <div class="hero">
+                    <span class="eyebrow">Análisis clínico</span>
+                    <h1>Interpretación de electroencefalogramas</h1>
+                    <p>Sube el archivo de tu EEG o usa la cámara para digitalizar la traza desde un informe impreso.</p>
+                </div>
+
+                <div class="upload-options">
+                    <div class="card upload-card" id="uploadArea">
+                        <div class="upload-icon">📂</div>
+                        <p><strong>Selecciona o arrastra el archivo EEG</strong></p>
+                        <p class="hint">.csv / .txt · .png / .jpg</p>
+                        <div id="fileName" class="file-name" style="display:none;"></div>
+                        <input type="file" id="fileInput" accept=".csv,.txt,.edf,.png,.jpg,.jpeg" style="display:none;" />
+                    </div>
+                    <div class="card upload-card" id="cameraArea">
+                        <div class="upload-icon">📷</div>
+                        <p><strong>Abrir cámara</strong></p>
+                        <p class="hint">Enfoca el informe con buena luz — captura automática</p>
+                    </div>
+                </div>
+
+                <div id="cameraContainer" style="display:none;">
+                    <div class="camera-wrapper">
+                        <video id="video" autoplay playsinline muted></video>
+                        <div class="scan-overlay">
+                            <div class="scan-grid"></div>
+                            <div class="scan-corner tl"></div>
+                            <div class="scan-corner tr"></div>
+                            <div class="scan-corner bl"></div>
+                            <div class="scan-corner br"></div>
+                            <div class="scan-line"></div>
+                        </div>
+                        <div class="cam-badge" id="camBadge">● ESCANEO EEG ACTIVO</div>
+                    </div>
+                    <div class="cam-controls">
+                        <button id="flipCameraBtn" class="btn-ghost" type="button">🔄 Voltear</button>
+                        <button id="captureBtn" class="btn-primary" type="button">📸 Capturar ahora</button>
+                        <button id="closeCameraBtn" class="btn-ghost" type="button">✕ Cerrar</button>
+                    </div>
+                    <p style="text-align:center; font-size:12.5px; color:#5c6f92; margin-top:12px; max-width:520px; margin-left:auto; margin-right:auto;">
+                        💡 <b>Modo automático:</b> el sistema captura solo cuando detecta el EEG correctamente encuadrado y con buena luz.
+                    </p>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                </div>
+
+                <button id="analyzeBtn" class="btn-primary">Analizar EEG</button>
+                <div id="resultContainer"></div>
+            </div>
+
+            <!-- Historial -->
+            <div class="container page" id="page-historial" style="display:none;">
+                <div class="hero">
+                    <span class="eyebrow">Registros</span>
+                    <h1>Historial de análisis</h1>
+                    <p>Todos tus análisis quedan guardados aquí para que puedas revisarlos cuando lo necesites.</p>
+                </div>
+                <div id="historyList"></div>
+            </div>
+
+            <!-- Aprender -->
+            <div class="container page" id="page-aprender" style="display:none;">
+                <div class="hero">
+                    <span class="eyebrow">Centro educativo</span>
+                    <h1>Guía para comprender tu EEG</h1>
+                    <p>Información basada en criterios clínicos y estándares neurológicos, explicada en lenguaje sencillo.</p>
+                </div>
+                <div class="card">
+                    <h3>¿Qué es un electroencefalograma?</h3>
+                    <p>El EEG registra la actividad eléctrica del cerebro mediante electrodos colocados en el cuero cabelludo. Es una herramienta fundamental en el diagnóstico de trastornos neurológicos, no invasiva y ampliamente utilizada en la práctica clínica.</p>
+                </div>
+                <div class="card">
+                    <h3>Ondas cerebrales y su significado clínico</h3>
+                    <div class="knowledge-grid">
+                        <div class="wave-row"><div class="wtag">Delta<br>0.5–4 Hz</div><div><div class="wname">Sueño profundo</div><div class="wdesc">Predominan durante el sueño de ondas lentas. En estado de vigilia, su presencia puede indicar patología estructural o encefalopatía.</div></div></div>
+                        <div class="wave-row"><div class="wtag">Theta<br>4–8 Hz</div><div><div class="wname">Relajación profunda</div><div class="wdesc">Comunes en somnolencia y meditación. Un exceso en vigilia activa puede sugerir disfunción cerebral difusa.</div></div></div>
+                        <div class="wave-row"><div class="wtag">Alfa<br>8–13 Hz</div><div><div class="wname">Reposo relajado</div><div class="wdesc">Aparecen con los ojos cerrados y se bloquean al abrirlos. Su ausencia o asimetría puede ser clínicamente relevante.</div></div></div>
+                        <div class="wave-row"><div class="wtag">Beta<br>13–30 Hz</div><div><div class="wname">Actividad cognitiva</div><div class="wdesc">Se asocian a un estado de alerta y concentración. Un exceso puede relacionarse con ansiedad o el efecto de ciertos fármacos.</div></div></div>
+                        <div class="wave-row"><div class="wtag">Gamma<br>&gt;30 Hz</div><div><div class="wname">Procesamiento superior</div><div class="wdesc">Vinculadas a funciones cognitivas complejas como la atención y la memoria de trabajo.</div></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Patrones anormales comunes</h3>
+                    <div>
+                        <div class="pattern-item"><div class="p-dot"></div><div><b>Puntas y ondas agudas</b><p>Descargas breves y de gran amplitud que pueden indicar epilepsia o irritación cortical focal.</p></div></div>
+                        <div class="pattern-item"><div class="p-dot"></div><div><b>Complejos punta-onda</b><p>Patrón característico de crisis de ausencia o epilepsia generalizada idiopática.</p></div></div>
+                        <div class="pattern-item"><div class="p-dot"></div><div><b>Lentificación focal</b><p>Enlentecimiento localizado del ritmo eléctrico que puede sugerir una lesión estructural o isquemia.</p></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Recomendaciones generales</h3>
+                    <ul class="notice-list">
+                        <li>Un EEG anormal no siempre significa epilepsia; siempre debe interpretarse en el contexto clínico del paciente.</li>
+                        <li>La presencia de actividad anormal requiere evaluación por un neurólogo certificado.</li>
+                        <li>Este sistema es una herramienta de apoyo educativo y no reemplaza el juicio clínico profesional.</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p>NeuroSense · Proyecto EUREKA 2026 · Ciencias Médicas y de la Salud</p>
+                <p class="disclaimer">Sistema de apoyo educativo e interpretativo. No constituye un diagnóstico médico y no reemplaza el criterio de un neurólogo certificado.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- PROGRESO -->
+    <div id="progressOverlay" class="progress-overlay" style="display:none;">
+        <div class="progress-card">
+            <div class="progress-icon">🧠</div>
+            <h3>Analizando electroencefalograma</h3>
+            <p id="progressMsg">Iniciando pipeline de análisis…</p>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-num" id="progressNum">0%</div>
+            <div class="progress-steps" id="progressSteps"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="gemini-config.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
